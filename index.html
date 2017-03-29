@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>live data and music</title>
+	<link rel="stylesheet" type="text/css" href="css/reset.css">
+</head>
+<body>
+
+
+<button onclick="drawBars()">Histogram</button>
+
+<button onclick="drawVenues()">Venues!</button>
+
+<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+<script type="text/javascript">
+		
+	//sets the body of the svg
+	var width = 800;
+	var height = 800;
+	var svg = d3.select("body")
+	.append("svg")
+	.attr("width", width)
+	.attr("height", height)
+	.style("background-color","#ccc");
+
+	//draws the initial layout
+	d3.json("data2.json", function(error, data) {
+		//if data is missing or broken, ignore that and move forward
+		if (error) throw error;
+
+		//sets the width of each bar based on the number of bars being created
+		var barWidth = width/data.length;
+
+		//creates each bar of the histogram 
+		svg.selectAll(".bars")
+			//calls zee data
+			.data(data)
+			.enter()
+			//creates the bars
+			.append("rect")
+			//positions the bars along the x-axis, 1 is subtracted from the day number to ensure it starts at the zero point. 
+			.attr("x", function(d){return (d.day-1)*barWidth})
+			//positions the bars along y-axis
+			.attr("y", function(d){return height-d.genretotal})
+			//applies the previously defined barWidth to the rect svg
+			.attr("width", barWidth)
+			//applies the genretotal as the height of the svgs
+			.attr("height", function(d){return d.genretotal})
+			//sets the color
+			.attr("fill", "steelblue")
+			//gives the rectangles the class "bar"
+			.classed("bars", true)
+			;
+
+		//creates venues for display on map
+		svg.selectAll(".venues")
+			//calls zee data
+			.data(data)
+			.enter()
+			//places the text
+			.append("text")
+			//sets the x coordinate with longitude data
+			.attr("x", function(d){return d.x})
+			//sets the y coordinate with latitude data
+			.attr("y", function(d){return d.y})
+			//applies words to text
+			.text(function(d){return d.genre})
+			.classed("venues", true)
+			;
+	});
+
+
+	//histogram bar animations and update
+	function drawBars(){
+		d3.json("data2.json", function(error,data){
+			//save selection of bars in a variable for easier use
+			var bars = svg.selectAll(".bars")
+						.data(data);
+
+			//update bars when data changes
+			bars
+			.transition()
+			.duration(500)
+			.attr("height", function(d){return d.genretotal*1.5})
+			.attr("y", function(d){return height-d.genretotal*1.5})
+			.transition()
+			.duration(500)
+			.attr("height", function(d){return d.genretotal})
+			.attr("y", function(d){return height-d.genretotal})
+			;
+		});
+	}
+
+	//venue animations and updates
+	function drawVenues(){
+		d3.json("data2.json", function(error, data){
+			var venues = svg.selectAll("venues").data(data);
+
+			//enter
+			venues
+			.enter()
+			.append("text")
+			//sets the x coordinate with longitude data
+			.attr("x", function(d){return d.x})
+			//sets the y coordinate with latitude data
+			.attr("y", function(d){return d.y})
+			.style("opacity", 0)
+			.text(function(d){return d.genre})
+			.classed("venues", true)
+			.transition()
+			.duration(1000)
+			//applies words to text
+			.style("opacity", 1)
+			; 
+
+			venues
+			.exit()
+			.transition()
+			.duration(1000)
+			.style("opacity", 0)
+			.remove()
+			;
+		});
+	}
+
+	//runs the drawBars function every 5 seconds
+	/*var interval = setInterval(
+		function(){
+			drawBars();
+			drawVenues();
+		}, 5000
+		);
+	*/
+</script>
+
+</body>
+</html>
