@@ -15,17 +15,41 @@
 
 <script type="text/javascript">
 		
-	//sets the body of the svg
+	//sets working size of the animation
 	var width = 800;
 	var height = 800;
+
+	//scale for longitude to pixels
+	var x = d3.scaleLinear().domain([-180,180]).range([width / 8,width]);
+
+	//scale for latitude to pixels
+	var y = d3.scaleLinear().domain([-90,90]).range([height, height / 8]);
+	
+	//set up the projection
+	var projection = d3.geoEquirectangular()
+		.scale(width/ 2 / Math.PI)
+		.translate([width / 2, height / 2]);
+
+	//set up path generator
+	var path = d3.geoPath().projection(projection);
+
+	//create svg container
 	var svg = d3.select("body")
 	.append("svg")
 	.attr("width", width)
 	.attr("height", height)
 	.style("background-color","#ccc");
 
+	//call data for chicago
+	d3.json("chicago.json",function(error,geojson){
+		svg.append("path")
+		.attr("d", path(geojson))
+		.classed("chicago",true);
+	});
+
+
 	//draws the initial layout
-	d3.json("data2.json", function(error, data) {
+	d3.json("data3.json", function(error, data) {
 		//if data is missing or broken, ignore that and move forward
 		if (error) throw error;
 
@@ -61,9 +85,9 @@
 			//places the text
 			.append("text")
 			//sets the x coordinate with longitude data
-			.attr("x", function(d){return d.x})
+			.attr("x", function(d){return x(d.lon)})
 			//sets the y coordinate with latitude data
-			.attr("y", function(d){return d.y})
+			.attr("y", function(d){return y(d.lat)})
 			//applies words to text
 			.text(function(d){return d.genre})
 			.classed("venues", true)
@@ -73,7 +97,7 @@
 
 	//histogram bar animations and update
 	function drawBars(){
-		d3.json("data2.json", function(error,data){
+		d3.json("data3.json", function(error,data){
 			//save selection of bars in a variable for easier use
 			var bars = svg.selectAll(".bars")
 						.data(data);
@@ -94,7 +118,7 @@
 
 	//venue animations and updates
 	function drawVenues(){
-		d3.json("data2.json", function(error, data){
+		d3.json("data3.json", function(error, data){
 			var venues = svg.selectAll("venues").data(data);
 
 			//enter
