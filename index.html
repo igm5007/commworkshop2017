@@ -11,6 +11,8 @@
 
 <button onclick="drawVenues()">Venues!</button>
 
+<button onclick="drawMap()">Draw Map</button>
+
 <script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
 
 <script type="text/javascript">
@@ -20,15 +22,16 @@
 	var height = 800;
 
 	//scale for longitude to pixels
-	var x = d3.scaleLinear().domain([-180,180]).range([width / 8,width]);
+	//var x = d3.scaleLinear().domain([-180,180]).range([width / 8,width]);
 
 	//scale for latitude to pixels
-	var y = d3.scaleLinear().domain([-90,90]).range([height, height / 8]);
+	//var y = d3.scaleLinear().domain([-90,90]).range([height, height / 8]);
 	
 	//set up the projection
 	var projection = d3.geoEquirectangular()
-		.scale(width/ 2 / Math.PI)
-		.translate([width / 2, height / 2]);
+		.scale(80000)
+		.translate([width / 2, height / 2])
+		.rotate([87.6,-41.8,0]);
 
 	//set up path generator
 	var path = d3.geoPath().projection(projection);
@@ -77,23 +80,7 @@
 			.classed("bars", true)
 			;
 
-		//creates venues for display on map
-		svg.selectAll(".venues")
-			//calls zee data
-			.data(data)
-			.enter()
-			//places the text
-			.append("text")
-			//sets the x coordinate with longitude data
-			.attr("x", function(d){return x(d.lon)})
-			//sets the y coordinate with latitude data
-			.attr("y", function(d){return y(d.lat)})
-			//applies words to text
-			.text(function(d){return d.genre})
-			.classed("venues", true)
-			;
 	});
-
 
 	//histogram bar animations and update
 	function drawBars(){
@@ -116,37 +103,39 @@
 		});
 	}
 
-	//venue animations and updates
-	function drawVenues(){
-		d3.json("data3.json", function(error, data){
-			var venues = svg.selectAll("venues").data(data);
+	function drawMap(){
+	d3.json("data3.json", function(error, data){
 
-			//enter
-			venues
+		if(error) throw error;
+		console.log(data);
+
+
+
+		svg.selectAll(".dot").remove();
+
+		svg.selectAll(".dot")
+			.data(data)
+			.enter()
+			.append("circle")
+			.attr("transform", function(d){return "translate (" + projection([d.lon,d.lat]) + ")";
+			})
+			.attr("r", 5)
+			.attr("fill", "#fff")
+			.attr("stroke","#fff")
+			.attr("stroke-width",2)
+			.classed("dot",true);
+
+		svg.selectAll(".venues")
+			.data(data)
 			.enter()
 			.append("text")
-			//sets the x coordinate with longitude data
-			.attr("x", function(d){return d.x})
-			//sets the y coordinate with latitude data
-			.attr("y", function(d){return d.y})
-			.style("opacity", 0)
 			.text(function(d){return d.genre})
-			.classed("venues", true)
-			.transition()
-			.duration(1000)
-			//applies words to text
-			.style("opacity", 1)
-			; 
-
-			venues
-			.exit()
-			.transition()
-			.duration(1000)
-			.style("opacity", 0)
-			.remove()
-			;
+			.attr("transform", function(d){return "translate (" + projection([d.lon,d.lat]) + ")";
+			})
+			.classed("venues",true);
 		});
 	}
+	drawMap();
 
 	//runs the drawBars function every 5 seconds
 	/*var interval = setInterval(
