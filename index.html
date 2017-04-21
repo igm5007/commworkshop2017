@@ -58,6 +58,22 @@
 	var dates = [];
 	var shows = [];
 
+	var today = new Date();
+	var dd = today.getDate();
+	var mm = today.getMonth()+1;
+	var yyyy = today.getFullYear();
+
+	if(dd < 10){
+		dd = '0' + dd;
+	}
+
+	if(mm < 10){
+		mm = '0' + mm;
+	}
+
+	today = yyyy + mm + dd;
+
+
 	/*$.each("songKickAPITest.json", function(key, data){
 		if(data.resultsPage.results.event.start.date == "2017-04-19"){
 			dates.push(data.resultsPage.results.event.start.date)
@@ -65,16 +81,20 @@
 	});*/
 
 
-	d3.json("songKickAPITest.json", function(error, data) {
+	d3.json("http://api.songkick.com/api/3.0/metro_areas/9426/calendar.json?apikey=xhPCSBfc3AI94hs3", function(error, data) {
 		d3.selectAll(".blob").data(data.resultsPage.results.event).enter().each(
 			function(d,i){
-				var event = [parseInt(d.start.date.replace(/-/g,""),10), d.start.time];
-				dates.push(event);
+				
+				var event = [parseInt(d.start.date.replace(/-/g,""),10), d.start.time, d.performance[0].displayName, d.venue.lng, d.venue.lat];
+	
+				if(event[0] == today){
+					dates.push(event);
+				}
 			})
 	});
 
-
-console.log(dates);
+	console.log(dates);
+	console.log(today);
 
 
 
