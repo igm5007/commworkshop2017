@@ -7,19 +7,24 @@
 <body>
 
 
-<button onclick="drawBars()">Histogram</button>
+	<button onclick="drawBars()">Histogram</button>
 
-<button onclick="drawVenues()">Venues!</button>
+	<button onclick="drawVenues()">Venues!</button>
 
-<button onclick="drawMap()">Draw Map</button>
+	<button onclick="drawMap()">Draw Map</button>
 
-<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
-<script type="text/javascript">
+	<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
+
+	<script type="text/javascript">
 		
 	//sets working size of the animation
 	var width = 800;
 	var height = 800;
+
+	//store the api key
+	var apikey = "xhPCSBfc3AI94hs3"
 
 	//scale for longitude to pixels
 	//var x = d3.scaleLinear().domain([-180,180]).range([width / 8,width]);
@@ -29,9 +34,9 @@
 	
 	//set up the projection
 	var projection = d3.geoEquirectangular()
-		.scale(80000)
-		.translate([width / 2, height / 2])
-		.rotate([87.6,-41.8,0]);
+	.scale(80000)
+	.translate([width / 2, height / 2])
+	.rotate([87.6,-41.8,0]);
 
 	//set up path generator
 	var path = d3.geoPath().projection(projection);
@@ -49,6 +54,29 @@
 		.attr("d", path(geojson))
 		.classed("chicago",true);
 	});
+
+	var dates = [];
+	var shows = [];
+
+	/*$.each("songKickAPITest.json", function(key, data){
+		if(data.resultsPage.results.event.start.date == "2017-04-19"){
+			dates.push(data.resultsPage.results.event.start.date)
+		}
+	});*/
+
+
+	d3.json("songKickAPITest.json", function(error, data) {
+		d3.selectAll(".blob").data(data.resultsPage.results.event).enter().each(
+			function(d,i){
+				var event = [parseInt(d.start.date.replace(/-/g,""),10), d.start.time];
+				dates.push(event);
+			})
+	});
+
+
+console.log(dates);
+
+
 
 
 	//draws the initial layout
@@ -80,14 +108,14 @@
 			.classed("bars", true)
 			;
 
-	});
+		});
 
 	//histogram bar animations and update
 	function drawBars(){
 		d3.json("data3.json", function(error,data){
 			//save selection of bars in a variable for easier use
 			var bars = svg.selectAll(".bars")
-						.data(data);
+			.data(data);
 
 			//update bars when data changes
 			bars
@@ -104,34 +132,32 @@
 	}
 
 	function drawMap(){
-	d3.json("data3.json", function(error, data){
+		d3.json("data3.json", function(error, data){
 
-		if(error) throw error;
-		console.log(data);
+			if(error) throw error;
+			console.log(data);
 
+			svg.selectAll(".dot").remove();
 
-
-		svg.selectAll(".dot").remove();
-
-		svg.selectAll(".dot")
+			svg.selectAll(".dot")
 			.data(data)
 			.enter()
 			.append("circle")
 			.attr("transform", function(d){return "translate (" + projection([d.lon,d.lat]) + ")";
-			})
+		})
 			.attr("r", 5)
 			.attr("fill", "#fff")
 			.attr("stroke","#fff")
 			.attr("stroke-width",2)
 			.classed("dot",true);
 
-		svg.selectAll(".venues")
+			svg.selectAll(".venues")
 			.data(data)
 			.enter()
 			.append("text")
 			.text(function(d){return d.genre})
 			.attr("transform", function(d){return "translate (" + projection([d.lon,d.lat]) + ")";
-			})
+		})
 			.classed("venues",true);
 		});
 	}
@@ -144,8 +170,11 @@
 			drawVenues();
 		}, 5000
 		);
-	*/
-</script>
+		*/
+
+
+		
+	</script>
 
 </body>
 </html>
