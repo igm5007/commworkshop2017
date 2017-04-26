@@ -3,6 +3,7 @@
 <head>
 	<title>live data and music</title>
 	<link rel="stylesheet" type="text/css" href="css/reset.css">
+
 </head>
 <body>
 
@@ -16,7 +17,7 @@
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
 	<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
-
+	<script type="text/javascript" src="spotify-web-api.js"></script>
 	<script type="text/javascript">
 		
 	//sets working size of the animation
@@ -25,6 +26,9 @@
 
 	//store the api key
 	var apikey = "xhPCSBfc3AI94hs3"
+
+	var spotifyApi = new SpotifyWebApi();
+	//spotifyApi.setAccessToken('<here_your_access_token>');
 
 	//scale for longitude to pixels
 	//var x = d3.scaleLinear().domain([-180,180]).range([width / 8,width]);
@@ -57,6 +61,7 @@
 
 	var dates = [];
 	var shows = [];
+	var artistIDs = [];
 
 	var today = new Date();
 	var dd = today.getDate();
@@ -73,30 +78,87 @@
 
 	today = yyyy + mm + dd;
 
-
-	/*$.each("songKickAPITest.json", function(key, data){
-		if(data.resultsPage.results.event.start.date == "2017-04-19"){
-			dates.push(data.resultsPage.results.event.start.date)
-		}
-	});*/
-
-
+	//
+	//
+	//
+	//
+	//
+	//
 	d3.json("http://api.songkick.com/api/3.0/metro_areas/9426/calendar.json?apikey=xhPCSBfc3AI94hs3", function(error, data) {
 		d3.selectAll(".blob").data(data.resultsPage.results.event).enter().each(
 			function(d,i){
 				
 				var event = [parseInt(d.start.date.replace(/-/g,""),10), d.start.time, d.performance[0].displayName, d.venue.lng, d.venue.lat];
-	
-				if(event[0] == today){
+
+				dates.push(event);
+
+				/*if(event[0] == today){
 					dates.push(event);
-				}
+				}*/
+				spotifyApi.searchArtists(dates[i][2])
+				.then(function(data2) {
+
+					artistIDs.push(data2.artists.items[0].id);
+					spotifyApi.getArtist(data2.artists.items[0].id)
+					.then(function(data3) {
+						//console.log('Artist information', data3);
+
+						var artistInfo = [data3.id, data3.genres, event];
+						shows.push(artistInfo);
+						console.log(artistInfo);
+						//dates[i].push(artistInfo);
+
+					}, function(err) {
+						console.error(err);
+					});
+
+				}, function(err) {
+				//console.error(err);
+
+				
+			});
+
+
 			})
+		
+		//
+		//
+		//
+		//
+		//
+		//
+		console.log(dates.length)
+
+		/*for(i=0; i<dates.length; i++){
+
+			spotifyApi.searchArtists(dates[i][2])
+			.then(function(data2) {
+
+					artistIDs.push(data2.artists.items[0].id);
+					spotifyApi.getArtist(data2.artists.items[0].id)
+					.then(function(data3) {
+						//console.log('Artist information', data3);
+
+						var artistInfo = [data3.id, data3.genres];
+						console.log(artistInfo);
+						//dates[i].push(artistInfo);
+
+					}, function(err) {
+						console.error(err);
+					});
+
+			}, function(err) {
+				//console.error(err);
+			});
+
+		};*/
+
+		console.log(shows);
+
+
 	});
 
-	console.log(dates);
-	console.log(today);
-
-
+//	console.log(today);
 
 
 	//draws the initial layout
@@ -128,7 +190,7 @@
 			.classed("bars", true)
 			;
 
-		});
+	});
 
 	//histogram bar animations and update
 	function drawBars(){
@@ -182,6 +244,8 @@
 		});
 	}
 	drawMap();
+
+
 
 	//runs the drawBars function every 5 seconds
 	/*var interval = setInterval(
