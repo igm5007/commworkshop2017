@@ -110,8 +110,7 @@
 
 						//combines the individual artistInfo arrays into a larger array
 						shows.push(artistInfo);
-						console.log(artistInfo);
-
+						
 					}, function(err) {
 						console.error(err);
 					});
@@ -157,7 +156,7 @@
 
 		};*/
 
-		console.log(shows);
+		//console.log(shows);
 
 
 	});
@@ -217,20 +216,21 @@
 		});
 	}
 
-	function drawMap(){
-		d3.json("data3.json", function(error, data){
 
-			if(error) throw error;
-			console.log(data);
+	console.log(shows);
+	//needs to be updated to call the shows array, not a json file
+	function drawMap(){
+		d3.json(shows, function(error, data){
+
 
 			svg.selectAll(".dot").remove();
 
 			svg.selectAll(".dot")
-			.data(data)
+			.data(shows)
 			.enter()
 			.append("circle")
-			.attr("transform", function(d){return "translate (" + projection([d.lon,d.lat]) + ")";
-		})
+			.attr("transform", function(d){return "translate (" + projection([shows[2][3],shows[2][4]]) + ")";
+			})
 			.attr("r", 5)
 			.attr("fill", "#fff")
 			.attr("stroke","#fff")
@@ -238,15 +238,18 @@
 			.classed("dot",true);
 
 			svg.selectAll(".venues")
-			.data(data)
+			.data(shows)
 			.enter()
-			.append("text")
+			.append(shows[1])
 			.text(function(d){return d.genre})
-			.attr("transform", function(d){return "translate (" + projection([d.lon,d.lat]) + ")";
+			.attr("transform", function(d){return "translate (" + projection([shows[2][3],shows[2][4]]) + ")";
 		})
 			.classed("venues",true);
 		});
+
+
 	}
+
 	drawMap();
 
 
