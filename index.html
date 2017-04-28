@@ -110,7 +110,8 @@
 
 						//combines the individual artistInfo arrays into a larger array
 						shows.push(artistInfo);
-						
+
+
 					}, function(err) {
 						console.error(err);
 					});
@@ -130,7 +131,8 @@
 		//
 		//
 		//
-		console.log(dates.length)
+		//console.log(dates.length);
+		//console.log(shows);
 
 		/*for(i=0; i<dates.length; i++){
 
@@ -156,7 +158,7 @@
 
 		};*/
 
-		//console.log(shows);
+		console.log(shows);
 
 
 	});
@@ -217,19 +219,17 @@
 	}
 
 
-	console.log(shows);
 	//needs to be updated to call the shows array, not a json file
 	function drawMap(){
-		d3.json(shows, function(error, data){
 
 
-			svg.selectAll(".dot").remove();
+			//svg.selectAll(".dot").remove();
 
 			svg.selectAll(".dot")
 			.data(shows)
 			.enter()
 			.append("circle")
-			.attr("transform", function(d){return "translate (" + projection([shows[2][3],shows[2][4]]) + ")";
+			.attr("transform", function(d){ return "translate (" + projection([d[2][3],d[2][4]]) + ")";
 			})
 			.attr("r", 5)
 			.attr("fill", "#fff")
@@ -237,7 +237,7 @@
 			.attr("stroke-width",2)
 			.classed("dot",true);
 
-			svg.selectAll(".venues")
+			/*svg.selectAll(".venues")
 			.data(shows)
 			.enter()
 			.append(shows[1])
@@ -245,8 +245,7 @@
 			.attr("transform", function(d){return "translate (" + projection([shows[2][3],shows[2][4]]) + ")";
 		})
 			.classed("venues",true);
-		});
-
+*/
 
 	}
 
