@@ -78,6 +78,7 @@
 
 	today = yyyy + mm + dd;
 
+
 	// The following codeblock builds the arrays that will be used for the visualization. 
 	// the songkick API is called using d3
 	d3.json("http://api.songkick.com/api/3.0/metro_areas/9426/calendar.json?apikey=xhPCSBfc3AI94hs3", function(error, data) {
@@ -96,6 +97,7 @@
 					dates.push(event);
 				}*/
 
+				
 				//calls the spotify API and searches for the most popular artist URI from the dates array
 				spotifyApi.searchArtists(dates[i][2])
 				.then(function(data2) {
@@ -105,10 +107,28 @@
 					.then(function(data3) {
 						//console.log('Artist information', data3);
 
-						//combines the artist URI, genre array, and event array, into individaul arrays 
+						//find the top tracks for the artist, 0 index being the most popular, 10 index being the tenth most popular
+						spotifyApi.getArtistTopTracks(data3.id, 'US')
+						.then(function(data4) {
+							console.log(data4.tracks[0]);
+
+							//gets audio analysis for each track
+							spotifyApi.getAudioAnalysisForTrack('3Qm86XLflmIXVm1wcwkgDK')
+							.then(function(data) {
+								console.log(data);
+							}, function(err) {
+								done(err);
+							});
+
+
+						}, function(err) {
+							console.log('Something went wrong!', err);
+						});
+
+						//combines the artist URI, genre array, and event array, into an individaul array for each data point from songkick
 						var artistInfo = [data3.id, data3.genres, event];
 
-						//combines the individual artistInfo arrays into a larger array
+						//combines the individual artistInfo array and saves into a larger, dynamic array
 						shows.push(artistInfo);
 
 
