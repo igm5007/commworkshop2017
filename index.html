@@ -3,33 +3,60 @@
 <head>
 	<title>live data and music</title>
 	<link rel="stylesheet" type="text/css" href="css/reset.css">
+	<style>
 
+    	#title {
+
+    	}
+    
+	  	.pulse {
+	  		animation: pulse 2s ease infinite
+	  	}
+
+	  	@keyframes pulse {
+	  		0% {
+	  			transform: scale(0.5);
+	  			transform-origin: center center;
+	  			opacity: 0.8
+	  		}
+	  		100% {
+	  			transform: scale(1.5);
+	  			transform-origin: center center;
+	  			opacity: 0
+	  		}
+	  	}
+    
+    
+  </style>
 </head>
 <body>
 
-
-	<button onclick="drawBars()">Histogram</button>
-
-	<button onclick="drawVenues()">Venues!</button>
-
 	<button onclick="drawMap()">Draw Map</button>
+	<button onclick="buildArray()">Build Array</button>
 
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
 	<script type="text/javascript" src="https://d3js.org/d3.v4.min.js"></script>
 	<script type="text/javascript" src="spotify-web-api.js"></script>
+
 	<script type="text/javascript">
 		
 	//sets working size of the animation
-	var width = 800;
+	var width = 1200;
 	var height = 800;
 
 	//store the api key
 	var apikey = "xhPCSBfc3AI94hs3"
 
-	var spotifyApi = new SpotifyWebApi();
-	//spotifyApi.setAccessToken('<here_your_access_token>');
 
+
+	//var clientID = 'b1afc2d4e8414a51a1d2301312921fb8';
+	//var clientSecret = 'b8c9484c6dd54ea38439921cd2e535e7';
+	var spotifyApi = new SpotifyWebApi();
+
+	spotifyApi.setAccessToken("");
+
+	
 	//scale for longitude to pixels
 	//var x = d3.scaleLinear().domain([-180,180]).range([width / 8,width]);
 
@@ -38,8 +65,8 @@
 	
 	//set up the projection
 	var projection = d3.geoEquirectangular()
-	.scale(80000)
-	.translate([width / 2, height / 2])
+	.scale(100000)
+	.translate([width / 1.5, height / 1.75])
 	.rotate([87.6,-41.8,0]);
 
 	//set up path generator
@@ -57,16 +84,23 @@
 		svg.append("path")
 		.attr("d", path(geojson))
 		.classed("chicago",true);
+
 	});
 
 	var dates = [];
 	var shows = [];
 	var artistIDs = [];
 
+	buildArray();
+
 	var today = new Date();
 	var dd = today.getDate();
 	var mm = today.getMonth()+1;
 	var yyyy = today.getFullYear();
+	var hour = today.getHours().toString();
+	var min = today.getMinutes().toString();
+	var sec = today.getSeconds();
+	var currentTime = 0;
 
 	if(dd < 10){
 		dd = '0' + dd;
@@ -76,200 +110,161 @@
 		mm = '0' + mm;
 	}
 
+	if(hour < 10){
+		hour = '0' + hour;
+	}
+
+	if(min < 10){
+		min = '0' + min;
+	}
+
+	console.log(hour);
+	console.log(min);
 	today = yyyy + mm + dd;
+	currentTime =  1000//parseInt(hour + min, 10);
+	console.log(currentTime);
+
+	function buildArray(){
+
 
 
 	// The following codeblock builds the arrays that will be used for the visualization. 
 	// the songkick API is called using d3
+
+	
 	d3.json("http://api.songkick.com/api/3.0/metro_areas/9426/calendar.json?apikey=xhPCSBfc3AI94hs3", function(error, data) {
+
 
 		// d3 creates an array by iterating through each of the items nested within the songkick API return
 		d3.selectAll(".blob").data(data.resultsPage.results.event).enter().each(
 			function(d,i){
 
+				var startTime = d.start.time;
+
+				if(startTime != null){
+					startTime = parseInt(startTime.replace(/:/,""),10);
+				}
+				else {
+					startTime = 2000;
+				}
+
 				//stores the start date, time, artist name, longitude, and latitutde of the event into a single dimension array
-				var event = [parseInt(d.start.date.replace(/-/g,""),10), d.start.time, d.performance[0].displayName, d.venue.lng, d.venue.lat];
+				var event = [parseInt(d.start.date.replace(/-/g,""),10), startTime, d.performance[0].displayName, d.venue.lng, d.venue.lat];
 
 				//creates an array to hold each individual event array
-				dates.push(event);
+				var endTime = startTime + 200;
 
-				/*if(event[0] == today){
-					dates.push(event);
-				}*/
+				if(event[0] == today){
+					if(currentTime < endTime){
+						
+					
+						//calls the spotify API and searches for the most popular artist URI from the dates array
+						spotifyApi.searchArtists(event[2])
+						.then(function(data2) {
+						
+							//grabs the artist URI and finds the artist info in spotify
+							spotifyApi.getArtist(data2.artists.items[0].id)
+							.then(function(data3) {
+								//console.log('Artist information', data3);
+								var artistInfo = [data3.id, data3.genres, event];
 
-				
-				//calls the spotify API and searches for the most popular artist URI from the dates array
-				spotifyApi.searchArtists(dates[i][2])
-				.then(function(data2) {
+								//find the top tracks for the artist, 0 index being the most popular, 10 index being the tenth most popular
+								spotifyApi.getArtistTopTracks(data3.id, 'US')
+								.then(function(data4) {
+									var track = [data4.tracks[0]];
 
-					//grabs the artist URI and finds the artist info in spotify
-					spotifyApi.getArtist(data2.artists.items[0].id)
-					.then(function(data3) {
-						//console.log('Artist information', data3);
+									//gets audio analysis for each track
+									spotifyApi.getAudioFeaturesForTrack(data4.tracks[0].id)
+									.then(function(data5) {
+										var trackInfo = [track, data5, artistInfo];
+										shows.push(trackInfo);
+										
 
-						//find the top tracks for the artist, 0 index being the most popular, 10 index being the tenth most popular
-						spotifyApi.getArtistTopTracks(data3.id, 'US')
-						.then(function(data4) {
-							console.log(data4.tracks[0]);
+										
+											drawMap();
+											liveShow();
 
-							//gets audio analysis for each track
-							spotifyApi.getAudioAnalysisForTrack('3Qm86XLflmIXVm1wcwkgDK')
-							.then(function(data) {
-								console.log(data);
+										
+
+									}, function(err) {
+										done(err);
+									});
+
+
+								}, function(err) {
+									console.log('Something went wrong!', err);
+								});
+
 							}, function(err) {
-								done(err);
+								console.error(err);
 							});
 
-
 						}, function(err) {
-							console.log('Something went wrong!', err);
+						//console.error(err);
+
+						
 						});
-
-						//combines the artist URI, genre array, and event array, into an individaul array for each data point from songkick
-						var artistInfo = [data3.id, data3.genres, event];
-
-						//combines the individual artistInfo array and saves into a larger, dynamic array
-						shows.push(artistInfo);
-
-
-					}, function(err) {
-						console.error(err);
-					});
-
-				}, function(err) {
-				//console.error(err);
-
-				
-			});
-
-
+					}
+				}
 			})
-		
-		//
-		//
-		//
-		//
-		//
-		//
-		//console.log(dates.length);
-		//console.log(shows);
-
-		/*for(i=0; i<dates.length; i++){
-
-			spotifyApi.searchArtists(dates[i][2])
-			.then(function(data2) {
-
-					artistIDs.push(data2.artists.items[0].id);
-					spotifyApi.getArtist(data2.artists.items[0].id)
-					.then(function(data3) {
-						//console.log('Artist information', data3);
-
-						var artistInfo = [data3.id, data3.genres];
-						console.log(artistInfo);
-						//dates[i].push(artistInfo);
-
-					}, function(err) {
-						console.error(err);
-					});
-
-			}, function(err) {
-				//console.error(err);
-			});
-
-		};*/
-
 		console.log(shows);
 
 
 	});
+}
+	
+	function liveShow(shows){
+		var dots2 = svg.selectAll(".dots2").data(shows);
 
-//	console.log(today);
-
-
-	//draws the initial layout
-	d3.json("data3.json", function(error, data) {
-		//if data is missing or broken, ignore that and move forward
-		if (error) throw error;
-
-		//sets the width of each bar based on the number of bars being created
-		var barWidth = width/data.length;
-
-		//creates each bar of the histogram 
-		svg.selectAll(".bars")
-			//calls zee data
-			.data(data)
+		if(shows[2][2][1] >= currentTime){
+			dots2
 			.enter()
-			//creates the bars
-			.append("rect")
-			//positions the bars along the x-axis, 1 is subtracted from the day number to ensure it starts at the zero point. 
-			.attr("x", function(d){return (d.day-1)*barWidth})
-			//positions the bars along y-axis
-			.attr("y", function(d){return height-d.genretotal})
-			//applies the previously defined barWidth to the rect svg
-			.attr("width", barWidth)
-			//applies the genretotal as the height of the svgs
-			.attr("height", function(d){return d.genretotal})
-			//sets the color
-			.attr("fill", "steelblue")
-			//gives the rectangles the class "bar"
-			.classed("bars", true)
-			;
-
-	});
-
-	//histogram bar animations and update
-	function drawBars(){
-		d3.json("data3.json", function(error,data){
-			//save selection of bars in a variable for easier use
-			var bars = svg.selectAll(".bars")
-			.data(data);
-
-			//update bars when data changes
-			bars
+			.append("circle")
+			.classed("dots2", true)
+			.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
+			})
+			.attr("r", 2.5)
+			.attr("fill", "red")
 			.transition()
-			.duration(500)
-			.attr("height", function(d){return d.genretotal*1.5})
-			.attr("y", function(d){return height-d.genretotal*1.5})
-			.transition()
-			.duration(500)
-			.attr("height", function(d){return d.genretotal})
-			.attr("y", function(d){return height-d.genretotal})
+			.duration(2000)
+			.attr("r", 25)
+			.style("fill-opacity", 0)
+			.each("end", function(){liveShow();})
 			;
-		});
+		}
 	}
-
 
 	//needs to be updated to call the shows array, not a json file
 	function drawMap(){
-
-
+		
+			var dots = svg.selectAll(".dots").data(shows);
 			//svg.selectAll(".dot").remove();
 
-			svg.selectAll(".dot")
-			.data(shows)
+
+			dots
 			.enter()
 			.append("circle")
-			.attr("transform", function(d){ return "translate (" + projection([d[2][3],d[2][4]]) + ")";
+			.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
 			})
-			.attr("r", 5)
 			.attr("fill", "#fff")
 			.attr("stroke","#fff")
 			.attr("stroke-width",2)
-			.classed("dot",true);
+			.attr("r", 2.5)
+			.classed("dots", true);
 
-			/*svg.selectAll(".venues")
-			.data(shows)
-			.enter()
-			.append(shows[1])
-			.text(function(d){return d.genre})
-			.attr("transform", function(d){return "translate (" + projection([shows[2][3],shows[2][4]]) + ")";
-		})
-			.classed("venues",true);
-*/
 
+
+			dots
+			.exit()
+			.transition()
+			.duration(3000)
+			.ease(d3.easeBounceOut)
+			.attr("cy", height)
+			.style("fill-opacity", 0)
+			.remove()
+		
 	}
 
-	drawMap();
 
 
 
