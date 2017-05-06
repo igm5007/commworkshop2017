@@ -42,16 +42,12 @@
 	<script type="text/javascript">
 		
 	//sets working size of the animation
-	var width = 1200;
+	var width = 1600;
 	var height = 800;
 
 	//store the api key
 	var apikey = "xhPCSBfc3AI94hs3"
 
-
-
-	//var clientID = 'b1afc2d4e8414a51a1d2301312921fb8';
-	//var clientSecret = 'b8c9484c6dd54ea38439921cd2e535e7';
 	var spotifyApi = new SpotifyWebApi();
 
 	spotifyApi.setAccessToken("");
@@ -66,7 +62,7 @@
 	//set up the projection
 	var projection = d3.geoEquirectangular()
 	.scale(100000)
-	.translate([width / 1.5, height / 1.75])
+	.translate([width / 1.75, height / 1.75])
 	.rotate([87.6,-41.8,0]);
 
 	//set up path generator
@@ -77,22 +73,40 @@
 	.append("svg")
 	.attr("width", width)
 	.attr("height", height)
-	.style("background-color","#ccc");
+	.style("background-color","#47b8e0");
 
-	//call data for chicago
-	d3.json("chicago.json",function(error,geojson){
+
+	d3.json("in.json",function(error,geojson){
 		svg.append("path")
 		.attr("d", path(geojson))
-		.classed("chicago",true);
+		.attr("fill", "#34314c")
+		.classed("illinois",true);
+	});	
+	d3.json("il.json",function(error,geojson){
+		svg.append("path")
+		.attr("d", path(geojson))
+		.attr("fill", "#34314c")
+		.classed("illinois",true);
+
+		//call data for chicago
+		d3.json("chicago.json",function(error,geojson){
+			svg.append("path")
+			.attr("d", path(geojson))
+			.attr("fill","#6C698A")
+			.classed("chicago",true);
+
+		});
 
 	});
 
+
+	//set up arrays to be used later
 	var dates = [];
 	var shows = [];
 	var artistIDs = [];
 
-	buildArray();
 
+	//calls the current time and pulls out each needed part
 	var today = new Date();
 	var dd = today.getDate();
 	var mm = today.getMonth()+1;
@@ -102,6 +116,7 @@
 	var sec = today.getSeconds();
 	var currentTime = 0;
 
+	//puts a zero in front of variable strings to align them with the in coming time information coming from spotify 
 	if(dd < 10){
 		dd = '0' + dd;
 	}
@@ -118,20 +133,18 @@
 		min = '0' + min;
 	}
 
-	console.log(hour);
-	console.log(min);
+	//builds a variable that holds
 	today = yyyy + mm + dd;
-	currentTime =  1000//parseInt(hour + min, 10);
+	currentTime =  parseInt(hour + min, 10);
 	console.log(currentTime);
+
+	//call array to pull data
+	buildArray();
 
 	function buildArray(){
 
-
-
 	// The following codeblock builds the arrays that will be used for the visualization. 
-	// the songkick API is called using d3
-
-	
+	// the songkick API is called using d3	
 	d3.json("http://api.songkick.com/api/3.0/metro_areas/9426/calendar.json?apikey=xhPCSBfc3AI94hs3", function(error, data) {
 
 
@@ -141,6 +154,7 @@
 
 				var startTime = d.start.time;
 
+				//checks if the start time isn't included in the data from songkick, this is necessary as it crashes the each loop if it tries to pass a null through. 
 				if(startTime != null){
 					startTime = parseInt(startTime.replace(/:/,""),10);
 				}
@@ -154,7 +168,10 @@
 				//creates an array to hold each individual event array
 				var endTime = startTime + 200;
 
+
+				//checks if shows from songkick are happening today
 				if(event[0] == today){
+					//if the shows are happening today, it then checks to make sure they haven't started yet, if they haven't they move into building the array
 					if(currentTime < endTime){
 						
 					
@@ -176,6 +193,8 @@
 									//gets audio analysis for each track
 									spotifyApi.getAudioFeaturesForTrack(data4.tracks[0].id)
 									.then(function(data5) {
+
+										//comibes the top track, the audio features for that track, and the artist that performs that track
 										var trackInfo = [track, data5, artistInfo];
 										shows.push(trackInfo);
 										
@@ -185,20 +204,22 @@
 											liveShow();
 
 										
-
+									//error fucntion for getAudioFeaturesForTrack
 									}, function(err) {
 										done(err);
 									});
 
-
+								//error function for getArtistTopTracks
 								}, function(err) {
 									console.log('Something went wrong!', err);
 								});
 
+							//error function for getArtist
 							}, function(err) {
 								console.error(err);
 							});
 
+						//error function for searchArtist
 						}, function(err) {
 						//console.error(err);
 
@@ -207,14 +228,17 @@
 					}
 				}
 			})
-		console.log(shows);
 
 
 	});
 }
+
+	console.log(shows);
 	
+	//creates the dots and animations 
 	function liveShow(shows){
 		var dots2 = svg.selectAll(".dots2").data(shows);
+
 
 		if(shows[2][2][1] >= currentTime){
 			dots2
