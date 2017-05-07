@@ -3,10 +3,35 @@
 <head>
 	<title>live data and music</title>
 	<link rel="stylesheet" type="text/css" href="css/reset.css">
+	<link href="https://fonts.googleapis.com/css?family=Montserrat:700|Open+Sans" rel="stylesheet">
 	<style>
 
-    	#title {
+		#infoBox {
+			position: absolute;
+			left: 50px;
+    		top: 50px;
+			width: 400px;
+			height: 100%;
+			opacity: 0.8;
+			fill: #fff;
+			z-index: 10;
 
+		}
+
+    	h1 {
+    		font-family: 'Montserrat', sans-serif;
+    		font-size: 24pt;
+    		color: white;
+    		width: 100%;
+    	}
+
+    	#description {
+    		font-family: 'Open Sans', sans-serif;
+    		font-size: 12pt;
+    		color: white;
+    		width: 100%;
+    		padding-top: 10px;
+    		line-height: 24px;
     	}
     
 	  	.pulse {
@@ -25,14 +50,29 @@
 	  			opacity: 0
 	  		}
 	  	}
+
+	  	#visualization {
+	  		position: absolute;
+	  		left: 0;
+	  		top: 0;
+	  		z-index: -1;
+	  	}
     
     
   </style>
 </head>
 <body>
 
-	<button onclick="drawMap()">Draw Map</button>
-	<button onclick="buildArray()">Build Array</button>
+	<div id="infoBox">
+		<h1>CITY BEATS: CHICAGO</h1>
+		
+		<div id="description">Explore concerts happening in Chicago and get a taste of the bands sounds and styles.
+		</div>
+
+	</div>
+
+	<!--<button onclick="drawMap()">Draw Map</button>
+	<button onclick="buildArray()">Build Array</button>-->
 
 	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
 
@@ -40,8 +80,12 @@
 	<script type="text/javascript" src="spotify-web-api.js"></script>
 
 	<script type="text/javascript">
-		
+	
+	//colorscheme: states: #34314c, lake: #47b8e0, not-used: #ffc952, venues: #ff7473
+
 	//sets working size of the animation
+
+
 	var width = 1600;
 	var height = 800;
 
@@ -73,7 +117,8 @@
 	.append("svg")
 	.attr("width", width)
 	.attr("height", height)
-	.style("background-color","#47b8e0");
+	.style("background-color","#47b8e0")
+	;
 
 
 	d3.json("in.json",function(error,geojson){
@@ -98,6 +143,17 @@
 		});
 
 	});
+
+
+	/*var siteTitle = svg.append("text")
+	.attr("x", 50)
+	.attr("y",100)
+	.text("CHICAGO BEATS")
+	.attr("font-family","'Montserrat', sans-serif")
+	.attr("font-size","24pt")
+	.classed("#siteTitle");*/
+
+
 
 
 	//set up arrays to be used later
@@ -152,7 +208,7 @@
 		d3.selectAll(".blob").data(data.resultsPage.results.event).enter().each(
 			function(d,i){
 
-				var startTime = d.start.time;
+				startTime = d.start.time;
 
 				//checks if the start time isn't included in the data from songkick, this is necessary as it crashes the each loop if it tries to pass a null through. 
 				if(startTime != null){
@@ -201,12 +257,14 @@
 
 										
 											drawMap();
-											liveShow();
-
+											
+											if(currentTime >= startTime){
+												liveShow();
+											}
 										
 									//error fucntion for getAudioFeaturesForTrack
 									}, function(err) {
-										done(err);
+										console.log('Something went wrong!', err);
 									});
 
 								//error function for getArtistTopTracks
@@ -230,17 +288,71 @@
 			})
 
 
+			console.log(shows);
+			//creates the dots and animations 
+
+
+
+
+			function liveShow(){
+				var dots2 = svg.selectAll(".dots2").data(shows);
+
+					dots2
+					.enter()
+					.append("circle")
+					.classed("dots2", true)
+					.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
+					})
+					.attr("r", 2.5)
+					.attr("fill", '#ff7473')
+					.transition()
+					.duration(2000)
+					.attr("r", 25)
+					.style("fill-opacity", 0)
+					.each("end", function(){liveShow();})
+					;
+				
+			}
+
+			//needs to be updated to call the shows array, not a json file
+			function drawMap(){
+				
+					var dots = svg.selectAll(".dots").data(shows);
+					//svg.selectAll(".dot").remove();
+
+					dots
+					.enter()
+					.append("circle")
+					.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
+					})
+					.attr("fill", '#ff7473')
+					.attr("stroke-width",2)
+					.attr("r", 2.5)
+					.classed("dots", true);
+
+
+
+					dots
+					.exit()
+					.transition()
+					.duration(3000)
+					.ease(d3.easeBounceOut)
+					.attr("cy", height)
+					.style("fill-opacity", 0)
+					.remove()
+				
+			}
+
 	});
 }
 
-	console.log(shows);
+	
 	
 	//creates the dots and animations 
-	function liveShow(shows){
+	/*function liveShow(shows){
 		var dots2 = svg.selectAll(".dots2").data(shows);
 
-
-		if(shows[2][2][1] >= currentTime){
+		if(dots2[2][2][1] >= currentTime){
 			dots2
 			.enter()
 			.append("circle")
@@ -248,7 +360,7 @@
 			.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
 			})
 			.attr("r", 2.5)
-			.attr("fill", "red")
+			.attr("fill", '#ff7473')
 			.transition()
 			.duration(2000)
 			.attr("r", 25)
@@ -270,8 +382,7 @@
 			.append("circle")
 			.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
 			})
-			.attr("fill", "#fff")
-			.attr("stroke","#fff")
+			.attr("fill", '#ff7473')
 			.attr("stroke-width",2)
 			.attr("r", 2.5)
 			.classed("dots", true);
@@ -287,7 +398,7 @@
 			.style("fill-opacity", 0)
 			.remove()
 		
-	}
+	}*/
 
 
 
