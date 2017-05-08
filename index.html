@@ -25,6 +25,13 @@
     		width: 100%;
     	}
 
+    	h2 {
+    		font-family: 'Montserrat', sans-serif;
+    		font-size: 12pt;
+    		color: white;
+    		width: 100%;
+    	}
+
     	#description {
     		font-family: 'Open Sans', sans-serif;
     		font-size: 12pt;
@@ -32,6 +39,12 @@
     		width: 100%;
     		padding-top: 10px;
     		line-height: 24px;
+    	}
+
+    	#event_info {
+    		position: absolute;
+    		left: 50px;
+    		top: 500px;
     	}
     
 	  	.pulse {
@@ -57,6 +70,8 @@
 	  		top: 0;
 	  		z-index: -1;
 	  	}
+
+	  	
     
     
   </style>
@@ -69,6 +84,11 @@
 		<div id="description">Explore concerts happening in Chicago and get a taste of the bands sounds and styles.
 		</div>
 
+	</div>
+
+	<div id="event_info">
+		<h2>Hover over an event</h2>
+		<div class="genres"></div>
 	</div>
 
 	<!--<button onclick="drawMap()">Draw Map</button>
@@ -152,8 +172,20 @@
 	.attr("font-family","'Montserrat', sans-serif")
 	.attr("font-size","24pt")
 	.classed("#siteTitle");*/
+	var tooltip = d3.select("body")
+		.append("div")
+		.style("position", "absolute")
+		.style("top", "500px")
+		.style("left", "50px")
+		.style("z-index", "10")
+		.style("visibility", "hidden")
+		.text("a simple tooltip");
 
-
+	var sampleSVG = d3.select(".band_title")
+	.append("svg:svg")
+	.attr("class", "sample")
+	.attr("width", 300)
+	.attr("height", 300);
 
 
 	//set up arrays to be used later
@@ -161,6 +193,14 @@
 	var shows = [];
 	var artistIDs = [];
 
+	buildArray();
+
+	setInterval(function(){
+			buildArray();
+		}, 180000
+		);
+
+	function buildArray(){
 
 	//calls the current time and pulls out each needed part
 	var today = new Date();
@@ -191,13 +231,8 @@
 
 	//builds a variable that holds
 	today = yyyy + mm + dd;
-	currentTime =  parseInt(hour + min, 10);
+	currentTime = parseInt(hour + min, 10);
 	console.log(currentTime);
-
-	//call array to pull data
-	buildArray();
-
-	function buildArray(){
 
 	// The following codeblock builds the arrays that will be used for the visualization. 
 	// the songkick API is called using d3	
@@ -210,13 +245,12 @@
 
 				startTime = d.start.time;
 
+
 				//checks if the start time isn't included in the data from songkick, this is necessary as it crashes the each loop if it tries to pass a null through. 
 				if(startTime != null){
 					startTime = parseInt(startTime.replace(/:/,""),10);
 				}
-				else {
-					startTime = 2000;
-				}
+
 
 				//stores the start date, time, artist name, longitude, and latitutde of the event into a single dimension array
 				var event = [parseInt(d.start.date.replace(/-/g,""),10), startTime, d.performance[0].displayName, d.venue.lng, d.venue.lat];
@@ -230,7 +264,7 @@
 					//if the shows are happening today, it then checks to make sure they haven't started yet, if they haven't they move into building the array
 					if(currentTime < endTime){
 						
-					
+					console.log(startTime);
 						//calls the spotify API and searches for the most popular artist URI from the dates array
 						spotifyApi.searchArtists(event[2])
 						.then(function(data2) {
@@ -257,8 +291,8 @@
 
 										
 											drawMap();
-											
-											if(currentTime >= startTime){
+
+											if(currentTime >= trackInfo[2][2][1]){
 												liveShow();
 											}
 										
@@ -274,7 +308,7 @@
 
 							//error function for getArtist
 							}, function(err) {
-								console.error(err);
+								console.log('Something went wrong!', err);
 							});
 
 						//error function for searchArtist
@@ -296,20 +330,19 @@
 
 			function liveShow(){
 				var dots2 = svg.selectAll(".dots2").data(shows);
-
+				console.log(shows);
 					dots2
 					.enter()
 					.append("circle")
 					.classed("dots2", true)
 					.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
 					})
-					.attr("r", 2.5)
+					.attr("r", 5)
 					.attr("fill", '#ff7473')
 					.transition()
 					.duration(2000)
 					.attr("r", 25)
 					.style("fill-opacity", 0)
-					.each("end", function(){liveShow();})
 					;
 				
 			}
@@ -326,11 +359,8 @@
 					.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
 					})
 					.attr("fill", '#ff7473')
-					.attr("stroke-width",2)
-					.attr("r", 2.5)
+					.attr("r", 5)
 					.classed("dots", true);
-
-
 
 					dots
 					.exit()
@@ -343,65 +373,14 @@
 				
 			}
 
+
+			d3.selectAll(".dots")
+			.on("mouseover", function(){
+				return tooltip.style("visibility", "visible");
+			})
+			;
 	});
 }
-
-	
-	
-	//creates the dots and animations 
-	/*function liveShow(shows){
-		var dots2 = svg.selectAll(".dots2").data(shows);
-
-		if(dots2[2][2][1] >= currentTime){
-			dots2
-			.enter()
-			.append("circle")
-			.classed("dots2", true)
-			.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
-			})
-			.attr("r", 2.5)
-			.attr("fill", '#ff7473')
-			.transition()
-			.duration(2000)
-			.attr("r", 25)
-			.style("fill-opacity", 0)
-			.each("end", function(){liveShow();})
-			;
-		}
-	}
-
-	//needs to be updated to call the shows array, not a json file
-	function drawMap(){
-		
-			var dots = svg.selectAll(".dots").data(shows);
-			//svg.selectAll(".dot").remove();
-
-
-			dots
-			.enter()
-			.append("circle")
-			.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
-			})
-			.attr("fill", '#ff7473')
-			.attr("stroke-width",2)
-			.attr("r", 2.5)
-			.classed("dots", true);
-
-
-
-			dots
-			.exit()
-			.transition()
-			.duration(3000)
-			.ease(d3.easeBounceOut)
-			.attr("cy", height)
-			.style("fill-opacity", 0)
-			.remove()
-		
-	}*/
-
-
-
 
 	//runs the drawBars function every 5 seconds
 	/*var interval = setInterval(
