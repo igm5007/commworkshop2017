@@ -20,8 +20,8 @@
 
 		#playlist {
 			position: absolute;
-			left: 50px;
-    		top: 175px;
+			right: 0px;
+    		top: 0px;
 			width: 400px;
 			height: 100%;
 			opacity: 0.8;
@@ -39,23 +39,23 @@
     	h2 {
     		font-family: 'Montserrat', sans-serif;
     		font-size: 20pt;
-    		color: white;
+    		color: #ff7473;
     		width: 100%;
     	}
 
     	h3 {
     		font-family: 'Montserrat', sans-serif;
     		font-size: 12pt;
-    		color: #ff7473;
+    		color: #6C698A;
     		padding-top: 10px;
     	}
 
     	.genre {
     		font-family: 'Open Sans', sans-serif;
     		font-size: 12pt;
-    		color: white;
-    		width: 33%;
+    		color: #ff7473;
     		padding-top: 10px;
+
     	}
 
     	#description {
@@ -70,7 +70,7 @@
     	#event_info {
     		position: absolute;
     		left: 50px;
-    		top: 500px;
+    		top: 200px;
     	}
     
 	  	.pulse {
@@ -107,18 +107,19 @@
 	<div id="infoBox">
 		<h1>CITY BEATS: CHICAGO</h1>
 		
-		<div id="description">Explore concerts happening in Chicago and get a taste of the bands sounds and styles.
+		<div id="description">Explore concerts happening in Chicago and get a taste of the bands' sounds and styles.
 		</div>
 
 	</div>
 
 	<div id="playlist">
-		<iframe src="https://embed.spotify.com/?uri=spotify%3Auser%3Aragingporcupine%3Aplaylist%3A5ZGmUE7ke3CbNzvY9RJFkT" width="400" height="300" frameborder="0" allowtransparency="true"></iframe>
+		<iframe src="https://embed.spotify.com/?uri=spotify%3Auser%3Aragingporcupine%3Aplaylist%3A5ZGmUE7ke3CbNzvY9RJFkT" width="400" height="800" frameborder="0" allowtransparency="true"></iframe>
 	</div>
 
 	<div id="event_info">
 		<h2>Hover over an event</h2>
-		<h3></h3>
+		<h3 class="venue"></h3>
+		<h3 class="startTime"></h3>
 	</div>
 
 	<!--<button onclick="drawMap()">Draw Map</button>
@@ -136,7 +137,7 @@
 	//sets working size of the animation
 
 
-	var width = 1450;
+	var width = 1440;
 	var height = 800;
 
 	//store the api key
@@ -150,7 +151,7 @@
 	//set up the projection
 	var projection = d3.geoEquirectangular()
 	.scale(100000)
-	.translate([width / 1.5, height / 1.75])
+	.translate([width / 1.6, height / 1.6])
 	.rotate([87.6,-41.8,0]);
 
 	//set up path generator
@@ -194,6 +195,7 @@
 	var dates = [];
 	var shows = [];
 	var artistIDs = [];
+	var danceability = [];
 
 	buildArray();
 
@@ -233,7 +235,7 @@
 
 	//builds a variable that holds
 	today = yyyy + mm + dd;
-	currentTime = parseInt(hour + min, 10);
+	currentTime = 2000//parseInt(hour + min, 10);
 	console.log(currentTime);
 
 	// The following codeblock builds the arrays that will be used for the visualization. 
@@ -288,6 +290,8 @@
 										//comibes the top track, the audio features for that track, and the artist that performs that track
 										var trackInfo = [track, data5, artistInfo];
 										shows.push(trackInfo);
+
+										danceability.push(data5.danceability)
 										
 
 										
@@ -364,13 +368,28 @@
 					.classed("dots", true)
 					.on("mouseover", function(){
 
-						$("#event_info h2").text(function(){return shows[2][2][2][2]});
+						$("#event_info h2")
+						.text(function(){return shows[2][2][2][2]})
+						;
+
+						d3.select("#event_info h2")
+						.style("fill-opacity", 0)
+						.transition()
+						.duration(500)
+						.style("fill-opacity", 1)
+						;
 						
-						$("#event_info h3").text(function(){return shows[2][2][2][5]});
+						$(".venue").text(function(){return shows[2][2][2][5]});
+						$(".startTime").text(function(){return shows[2][2][2][1]});
+
 
 						var genreLength = shows[1][2][1].length;
 						for(i=0; i < genreLength; i++){
-							$('<div class="genre" />').text(function(){ return shows[1][2][1][i]}).appendTo('body');
+							$('<div class="genre" />')
+							.text(function(){ return shows[1][2][1][i]})
+							.appendTo('body #event_info')
+							;
+
 							console.log(function(){ return shows[1][2][1][i]});
 						}
 					})
@@ -385,6 +404,9 @@
 					.style("fill-opacity", 0)
 					.remove()
 					;
+
+					var chiDance = d3.sum(danceability)/danceability.length;
+					console.log(chiDance);
 			}
 
 			
