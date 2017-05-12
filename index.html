@@ -187,6 +187,9 @@
 			.attr("fill","#6C698A")
 			.classed("chicago",true);
 
+				buildArray();
+
+
 		});
 
 	});
@@ -197,7 +200,6 @@
 	var artistIDs = [];
 	var danceability = [];
 
-	buildArray();
 
 	setInterval(function(){
 			buildArray();
@@ -243,7 +245,10 @@
 	d3.json("http://api.songkick.com/api/3.0/metro_areas/9426/calendar.json?apikey=xhPCSBfc3AI94hs3", function(error, data) {
 
 		// d3 creates an array by iterating through each of the items nested within the songkick API return
-		d3.selectAll(".blob").data(data.resultsPage.results.event).enter().each(
+		d3.selectAll(".blob")
+		.data(data.resultsPage.results.event)
+		.enter()
+		.each(
 			function(d,i){
 
 				startTime = d.start.time;
@@ -296,8 +301,8 @@
 
 										
 											drawMap();
-
-											if(currentTime >= trackInfo[2][2][2]){
+											console.log(trackInfo[2][2][1] + "|" + currentTime);
+											if(currentTime >= trackInfo[2][2][1]){
 												liveShow();
 											}
 										
@@ -327,7 +332,6 @@
 			})
 
 
-			console.log(shows);
 			//creates the dots and animations 
 
 
@@ -335,7 +339,8 @@
 
 			function liveShow(){
 				var dots2 = svg.selectAll(".dots2").data(shows);
-				console.log(shows);
+					
+
 					dots2
 					.enter()
 					.append("circle")
@@ -344,6 +349,35 @@
 					})
 					.attr("r", 5)
 					.attr("fill", '#ff7473')
+					.on("mouseover", function(){
+						
+						d3.selectAll(".genre").remove();
+
+						d3.select("#event_info h2")
+						.text(function(){return shows[2][2][2][2]})
+						;
+
+						d3.select("#event_info h2")
+						.style("fill-opacity", 0)
+						.transition()
+						.duration(500)
+						.style("fill-opacity", 1)
+						;
+						
+						$(".venue").text(function(){return shows[2][2][2][5]});
+						$(".startTime").text(function(){return shows[2][2][2][1]});
+
+
+						var genreLength = shows[1][2][1].length;
+						for(i=0; i < genreLength; i++){
+							$('<div class="genre" />')
+							.text(function(){ return shows[1][2][1][i]})
+							.appendTo('body #event_info')
+							;
+
+							console.log(function(){ return shows[1][2][1][i]});
+						}
+					})
 					.transition()
 					.duration(2000)
 					.attr("r", 25)
@@ -354,21 +388,27 @@
 
 			//needs to be updated to call the shows array, not a json file
 			function drawMap(){
+
+				d3.selectAll("dots").remove();
 					
 					var dots = svg.selectAll(".dots").data(shows);
+//var dots = svg.selectAll(".dots").data(shows, function(d) { return d[2][1]; });
+
 					//svg.selectAll(".dot").remove();
 
 					dots
 					.enter()
 					.append("circle")
-					.attr("transform", function(d){ return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
+					.attr("transform", function(d){ console.log(d);return "translate (" + projection([d[2][2][3],d[2][2][4]]) + ")";
 					})
 					.attr("fill", '#ff7473')
 					.attr("r", 5)
 					.classed("dots", true)
 					.on("mouseover", function(){
+						
+						d3.selectAll(".genre").remove();
 
-						$("#event_info h2")
+						d3.select("#event_info h2")
 						.text(function(){return shows[2][2][2][2]})
 						;
 
